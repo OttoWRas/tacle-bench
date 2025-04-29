@@ -1,13 +1,14 @@
 #!/bin/bash
 
-COMPILER=gcc # Please adapt this line to your favorite compiler.
-#COMPILER=patmos-clang
+#COMPILER=gcc # Please adapt this line to your favorite compiler.
+COMPILER=patmos-clang
 
-OPTIONS=" -Wall -Wno-unknown-pragmas -Werror "
+OPTIONS=" -O2 "
 
-EXEC= # Adapt if the executable is to be executed via another program
+#EXEC= # Adapt if the executable is to be executed via another program
 #EXEC=valgrind\ -q
-#EXEC=pasim
+EXEC=~/t-crest/simulator/build/src/pasim
+EXEC_OPTIONS=" -S block -M fifo --mbsize 8 --full --hitmiss-stats "
 
 PASS=0
 FAIL_COMP=0
@@ -22,7 +23,11 @@ for dir in */; do
     for BENCH in */; do
         cd "$BENCH"
                 
-        printf "Checking ${BENCH} ..."
+        # Remove trailing slash from BENCH
+        BENCH_NAME=$(basename "$BENCH")
+        
+
+        printf "Checking ${BENCH_NAME} ..."
         if [ -f a.out ]; then
             rm a.out
         fi
@@ -33,10 +38,12 @@ for dir in */; do
         
         
         # Please remove '&>/dev/null' to identify the warnings (if any)
-        $COMPILER $OPTIONS *.c  &>/dev/null
+        $COMPILER $OPTIONS *.c
         
         if [ -f a.out ]; then
-            $EXEC ./a.out &>/dev/null
+            rm -f "$BENCH_NAME.pasim"
+            touch "$BENCH_NAME.pasim"
+            $EXEC $EXEC_OPTIONS ./a.out 2> "$BENCH_NAME.pasim"
             RETURNVALUE=$(echo $?)
             if [ $RETURNVALUE -eq 0 ]; then
                 printf "passed. \n"
